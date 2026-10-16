@@ -149,17 +149,17 @@ python -m simple_seg prepare --root dataset --images Image --masks Mask --val-ra
 
 ## 3. 选择算法
 
-当前数据共 **6042 对**，训练/验证/测试分别为 **4230/1208/604**。全部 13 个实验的训练 `batch_size=16`（每卡），梯度累积为 1；val/test 继续每卡 1 张，以适应不同比例和尺寸的图片。
+当前数据共 **6042 对**，训练/验证/测试分别为 **4230/1208/604**。全部 13 个实验的训练 `batch_size=12`（每卡），梯度累积为 1；val/test 继续每卡 1 张，以适应不同比例和尺寸的图片。
 
-训练上限统一为 **30000 iter**，验证及保存间隔均为 **265 iter**；每次验证保留快照，按 mIoU 保存 best，继续使用 **5000 iter** 无有效提升早停。单卡每次完整遍历约 `4230/16=264.375 iter`，因此上限相当于约 **113.5 轮**，作为当前从头训练的初始预算，不代表已经测得最佳收敛轮数。官方 InfiniteSampler 持续采样，这里的“轮数”仅是累计样本量的换算。
+训练上限统一为 **30000 iter**，验证及保存间隔均为 **265 iter**；每次验证保留快照，按 mIoU 保存 best，继续使用 **5000 iter** 无有效提升早停。单卡每次完整遍历约 `4230/12=352.5 iter`，因此上限相当于约 **85 轮**，作为当前从头训练的初始预算，不代表已经测得最佳收敛轮数。官方 InfiniteSampler 持续采样，这里的“轮数”仅是累计样本量的换算。
 
-双卡时全局 batch 为 32，30000 iter 相当于约 **227 轮**。如果希望双卡也约 100 轮，可给单次或批量训练加 `--max-iters 13250`；此参数同步用于生成学习率调度。验证/保存间隔仍为 265 iter，约对应双卡的两轮，早停仍按 5000 iter 计算。换算公式为 `等效轮数 = iter × 每卡 batch_size × GPU 数 / 训练样本数`。梯度累积增加每次优化更新所包含的样本数，不会增加每个 dataloader iter 读取的样本数。
+双卡时全局 batch 为 24，30000 iter 相当于约 **170 轮**。如果希望双卡也约 100 轮，可给单次或批量训练加 `--max-iters 17625`；此参数同步用于生成学习率调度。验证/保存间隔仍为 265 iter，约对应双卡的两轮，早停仍按 5000 iter 计算。换算公式为 `等效轮数 = iter × 每卡 batch_size × GPU 数 / 训练样本数`。梯度累积增加每次优化更新所包含的样本数，不会增加每个 dataloader iter 读取的样本数。
 
 ```bash
-# 双卡、全局 batch=32，约 100 轮上限
-python scripts/train.py configs/experiments/segformer_b0.json --gpus 2 --max-iters 13250
+# 双卡、全局 batch=24，约 100 轮上限
+python scripts/train.py configs/experiments/segformer_b0.json --gpus 2 --max-iters 17625
 # 所有模型采用相同的双卡训练预算
-python scripts/batch_train.py configs/batch/extended.json --gpus 2 --max-iters 13250
+python scripts/batch_train.py configs/batch/extended.json --gpus 2 --max-iters 17625
 ```
 
 每卡 16 是按当前实验要求统一设置，尚未验证其显存占用；Mask2Former、较大的 backbone 和 DeepLabV3+ 的官方大裁剪可能超出显存。上游学习率及 AMP 设置保持原样，没有随 batch 自动放大学习率。若出现 OOM，需要按实际显存减小每卡 batch；必要时可使用梯度累积，并重新按实际 batch 换算训练 iter。
@@ -455,13 +455,13 @@ python scripts/train.py configs/experiments/segformer_b0.json --gpus 2 --print-o
 python scripts/train.py configs/experiments/unet.json --dry-run
 ```
 
-JSON 中的 `batch_size` 与原生 MMSeg 一样是**每张卡的 batch size**：当前 `batch_size=16` 时双卡全局 batch 为 32（未启用梯度累积时）。增加卡数不会自动修改学习率；可用 `--cfg-options optim_wrapper.optimizer.lr=0.0001` 显式调整。`max_iters` 仍是全局训练迭代数，不会自动除以卡数；若要保持相同样本预算，可按上文显式传入 `--max-iters`。配置文件只由主进程保存；日志、权重及评估同步沿用 MMEngine 行为。
+JSON 中的 `batch_size` 与原生 MMSeg 一样是**每张卡的 batch size**：当前 `batch_size=12` 时双卡全局 batch 为 24（未启用梯度累积时）。增加卡数不会自动修改学习率；可用 `--cfg-options optim_wrapper.optimizer.lr=0.0001` 显式调整。`max_iters` 仍是全局训练迭代数，不会自动除以卡数；若要保持相同样本预算，可按上文显式传入 `--max-iters`。配置文件只由主进程保存；日志、权重及评估同步沿用 MMEngine 行为。
 
 ### 按顺序批量训练多个模型
 
 示例清单 `configs/batch/default.json` 包含 SegFormer-B0、DeepLabV3+、U-Net。批量训练每次只运行一个模型；每个模型占用所选的全部 GPU，完成后才开始下一个。
 
-`configs/batch/extended.json` 包含全部 13 个实验，包括 ConvNeXt、Mask2Former、Swin、Twins、SegNeXt。完整安装后运行 `python scripts/batch_train.py configs/batch/extended.json --gpus 2`。所有模板使用每卡 batch=16；ConvNeXt 模板默认 AMP，Mask2Former 模板默认全精度。批量公共参数 `--amp` 会强制所有模型开启 AMP，只有需要时再加。
+`configs/batch/extended.json` 包含全部 13 个实验，包括 ConvNeXt、Mask2Former、Swin、Twins、SegNeXt。完整安装后运行 `python scripts/batch_train.py configs/batch/extended.json --gpus 2`。所有模板使用每卡 batch=12；ConvNeXt 模板默认 AMP，Mask2Former 模板默认全精度。批量公共参数 `--amp` 会强制所有模型开启 AMP，只有需要时再加。
 
 ```bash
 # 单卡批量训练
@@ -502,7 +502,7 @@ python scripts/batch_train.py configs/batch/default.json --gpus 2 --print-only
 
 ## 双卡并行训练八种轻量模型
 
-运行 **`scripts/train_gpu_queue.py`**：每张卡同时只运行一个独立单卡模型，空闲后立即领取下一个模型。默认 GPU 0 先训练 ConvNeXt，GPU 1 先训练 DeepLabV3+；之后按空闲顺序调度剩余任务。该队列使用普通单卡 Runner，因此原生 Windows 也能使用这两张卡并行训练不同模型。单个模型每卡 batch=16、30000 iter，不会因为电脑有两张卡而合成全局 batch=32。
+运行 **`scripts/train_gpu_queue.py`**：每张卡同时只运行一个独立单卡模型，空闲后立即领取下一个模型。默认 GPU 0 先训练 ConvNeXt，GPU 1 先训练 DeepLabV3+；之后按空闲顺序调度剩余任务。该队列使用普通单卡 Runner，因此原生 Windows 也能使用这两张卡并行训练不同模型。单个模型每卡 batch=12、30000 iter，不会因为电脑有两张卡而合成全局 batch=24。
 
 任务列表为 [`configs/batch/lightweight.json`](configs/batch/lightweight.json)，只包含以下八项，选择范围为项目固定 MMSeg v1.2.2 提供的轻量配置，并不包含另行移植其他库的 Nano 等骨干：
 

@@ -2,7 +2,7 @@
   "model_config": "third_party/mmsegmentation/configs/convnext/convnext-tiny_upernet_8xb2-amp-160k_ade20k-512x512.py",
   "data_root": "dataset",
   "split_dir": "splits",
-  "batch_size": 16,
+  "batch_size": 12,
   "num_workers": 0,
   "max_iters": 30000,
   "val_interval": 265,

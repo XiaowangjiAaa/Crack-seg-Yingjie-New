@@ -1,7 +1,7 @@
 {
   "model_config": "third_party/mmsegmentation/configs/mobilenet_v2/mobilenet-v2-d8_deeplabv3plus_4xb4-160k_ade20k-512x512.py",
   "data_root": "dataset",
-  "batch_size": 16,
+  "batch_size": 12,
   "num_workers": 0,
   "max_iters": 30000,
   "val_interval": 265,

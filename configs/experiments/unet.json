@@ -1,7 +1,7 @@
 {
   "model_config": "third_party/mmsegmentation/configs/unet/unet-s5-d16_fcn_4xb4-40k_drive-64x64.py",
   "data_root": "dataset",
-  "batch_size": 16,
+  "batch_size": 12,
   "num_workers": 0,
   "max_iters": 30000,
   "val_interval": 265,

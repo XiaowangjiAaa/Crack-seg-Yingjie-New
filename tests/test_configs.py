@@ -70,7 +70,7 @@ class UpstreamConfigTests(unittest.TestCase):
                     cfg = build_config(experiment, root)
                     self.assertEqual(cfg.model.decode_head.num_classes, 2)
                     self.assertEqual(cfg.train_dataloader.dataset.type, 'BinaryPairDataset')
-                    self.assertEqual(cfg.train_dataloader.batch_size, 16)
+                    self.assertEqual(cfg.train_dataloader.batch_size, 12)
                     self.assertEqual(cfg.train_cfg.max_iters, 30000)
                     self.assertEqual(cfg.train_cfg.val_interval, 265)
                     self.assertEqual(cfg.default_hooks.checkpoint.interval, 265)
