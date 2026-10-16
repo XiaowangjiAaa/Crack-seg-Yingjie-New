@@ -1,0 +1,15 @@
+__pycache__/
+*.egg-info/
+.venv/
+.venv-mmseg/
+.test-deps/
+work_dirs/
+predictions/
+splits/
+third_party/
+Image/
+Mask/
+*.pth
+dataset/
+tmp0ader2ay/
+.pytest_cache/

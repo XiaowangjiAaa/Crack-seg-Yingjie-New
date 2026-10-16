@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simple-mmseg"
+version = "0.1.0"
+description = "MMSegmentation algorithms with a simple image / binary mask interface"
+requires-python = ">=3.9"
+dependencies = ["numpy<2", "Pillow>=9", "mmengine>=0.7.4,<1", "mmcv>=2.0.0,<2.2.0", "mmsegmentation==1.2.2", "ftfy", "regex", "matplotlib", "tensorboard==2.18.0"]
+
+[project.scripts]
+simple-seg = "simple_seg.cli:main"
+simple-seg-webui = "simple_seg.dashboard:main"
+
+[project.optional-dependencies]
+models = ["mmpretrain==1.2.0", "mmdet==3.3.0"]
+
+[tool.setuptools.packages.find]
+include = ["simple_seg*"]

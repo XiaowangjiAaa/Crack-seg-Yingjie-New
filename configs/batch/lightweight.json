@@ -1,0 +1,34 @@
+[
+  {
+    "name": "convnext_tiny",
+    "config": "configs/experiments/convnext_tiny.json"
+  },
+  {
+    "name": "deeplabv3plus_mobilenetv2",
+    "config": "configs/experiments/deeplabv3plus_mobilenetv2.json"
+  },
+  {
+    "name": "mask2former_r50",
+    "config": "configs/experiments/mask2former_r50.json"
+  },
+  {
+    "name": "segformer_b0",
+    "config": "configs/experiments/segformer_b0.json"
+  },
+  {
+    "name": "segnext_tiny",
+    "config": "configs/experiments/segnext_tiny.json"
+  },
+  {
+    "name": "swin_tiny",
+    "config": "configs/experiments/swin_tiny.json"
+  },
+  {
+    "name": "twins_svt_small_fpn",
+    "config": "configs/experiments/twins_svt_small_fpn.json"
+  },
+  {
+    "name": "unet",
+    "config": "configs/experiments/unet.json"
+  }
+]

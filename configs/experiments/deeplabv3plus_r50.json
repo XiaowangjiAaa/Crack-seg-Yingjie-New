@@ -1,0 +1,42 @@
+{
+  "model_config": "third_party/mmsegmentation/configs/deeplabv3plus/deeplabv3plus_r50-d8_4xb2-40k_cityscapes-512x1024.py",
+  "data_root": "dataset",
+  "batch_size": 16,
+  "num_workers": 0,
+  "max_iters": 30000,
+  "val_interval": 265,
+  "checkpoint_interval": 265,
+  "save_on_val": true,
+  "max_keep_ckpts": -1,
+  "metrics": [
+    "mIoU",
+    "mDice",
+    "mFscore",
+    "Precision",
+    "Recall",
+    "F1-score"
+  ],
+  "early_stopping": {
+    "patience_iters": 5000,
+    "min_delta": 0.0
+  },
+  "seed": 42,
+  "no_pretrained": true,
+  "work_dir": "work_dirs/deeplabv3plus_r50",
+  "augmentation": {
+    "mode": "upstream"
+  },
+  "scheduler": {
+    "type": "poly",
+    "warmup_iters": 0,
+    "warmup_ratio": 1e-06,
+    "power": 0.9,
+    "eta_min": 0.0
+  },
+  "accumulative_counts": 1,
+  "logging": {
+    "interval": 10,
+    "window_size": 10,
+    "tensorboard": true
+  }
+}

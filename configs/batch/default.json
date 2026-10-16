@@ -1,0 +1,5 @@
+[
+  {"name": "segformer_b0", "config": "configs/experiments/segformer_b0.json"},
+  {"name": "deeplabv3plus_r50", "config": "configs/experiments/deeplabv3plus_r50.json"},
+  {"name": "unet", "config": "configs/experiments/unet.json"}
+]

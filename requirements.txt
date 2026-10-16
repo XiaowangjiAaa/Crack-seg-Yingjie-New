@@ -1,0 +1,13 @@
+# Full CUDA installation: all 15 experiments and TensorBoard WebUI.
+# One-command environment setup from Conda PowerShell:
+# powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+# Or, inside an existing Python 3.10 environment:
+# python -m pip install -r requirements.txt
+# python -m pip install -e .
+# Native Windows: single GPU. Linux/WSL2: native NCCL distributed training.
+--extra-index-url https://download.pytorch.org/whl/cu118
+--find-links https://download.openmmlab.com/mmcv/dist/cu118/torch2.1/index.html
+--only-binary mmcv
+torch==2.1.0+cu118
+torchvision==0.16.0+cu118
+-r requirements-common.txt

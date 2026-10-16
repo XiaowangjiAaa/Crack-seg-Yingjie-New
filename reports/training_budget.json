@@ -1,0 +1,163 @@
+{
+  "paired_samples": 6042,
+  "split_counts": {
+    "train": 4230,
+    "val": 1208,
+    "test": 604
+  },
+  "basis": "User-selected single-GPU limit of 30000 iterations; not measured convergence.",
+  "equivalent_passes_formula": "iters * per_gpu_batch_size * world_size / train_samples",
+  "accumulative_counts": 1,
+  "experiments": [
+    {
+      "experiment": "convnext_small",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "convnext_tiny",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "deeplabv3plus_mobilenetv2",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 0
+    },
+    {
+      "experiment": "deeplabv3plus_r50",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 0
+    },
+    {
+      "experiment": "mask2former_r50",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 0
+    },
+    {
+      "experiment": "mask2former_swin_tiny",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 0
+    },
+    {
+      "experiment": "segformer_b0",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "segnext_small",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "segnext_tiny",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "swin_small",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "swin_tiny",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "twins_pcpvt_small",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "twins_svt_small",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "twins_svt_small_fpn",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 1500
+    },
+    {
+      "experiment": "unet",
+      "batch_size_per_gpu": 16,
+      "max_iters": 30000,
+      "val_interval": 265,
+      "checkpoint_interval": 265,
+      "patience_iters": 5000,
+      "warmup_iters": 0
+    }
+  ],
+  "single_gpu": {
+    "global_batch": 16,
+    "max_iters": 30000,
+    "equivalent_passes": 113.47517730496453
+  },
+  "two_gpus_default": {
+    "global_batch": 32,
+    "max_iters": 30000,
+    "equivalent_passes": 226.95035460992906
+  },
+  "two_gpus_approximately_100_passes": {
+    "global_batch": 32,
+    "max_iters": 13250,
+    "equivalent_passes": 100.23640661938535
+  }
+}
