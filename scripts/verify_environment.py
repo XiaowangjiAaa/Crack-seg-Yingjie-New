@@ -1,4 +1,6 @@
 """Fail installation if binary ops or optional model registries cannot load."""
+import os
+import site
 import sys
 
 
@@ -6,6 +8,14 @@ def main():
     if sys.version_info[:2] != (3, 10):
         raise RuntimeError('The supported installation environment is Python 3.10')
     import torch
+    if getattr(site, 'ENABLE_USER_SITE', False):
+        user_site = os.path.realpath(site.getusersitepackages())
+        if user_site in os.path.realpath(torch.__file__):
+            raise RuntimeError(
+                'torch was imported from the user site-packages ({}) instead of this environment. '
+                'A stale user-level install shadows the environment. Run with PYTHONNOUSERSITE=1, '
+                'or remove the torch/torchvision copy under that directory.'.format(user_site)
+            )
     import torchvision
     import mmcv
     import mmengine

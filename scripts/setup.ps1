@@ -1,5 +1,9 @@
 param([string]$EnvPath = '', [switch]$Cpu, [switch]$SkipData, [switch]$PrintOnly)
 $ErrorActionPreference = 'Stop'
+# Ignore user site-packages and never install into the per-user site: a stale
+# user-level torch otherwise shadows the environment's CUDA build.
+$env:PYTHONNOUSERSITE = '1'
+$env:PIP_USER = '0'
 $Project = Split-Path -Parent $PSScriptRoot
 if (-not $EnvPath) { $EnvPath = Join-Path $Project '.venv-mmseg' }
 $EnvPath = [System.IO.Path]::GetFullPath($EnvPath)

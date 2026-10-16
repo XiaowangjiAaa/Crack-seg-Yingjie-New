@@ -2,6 +2,11 @@
 # Linux/WSL2 one-command installer. No sudo, source builds, or existing split overwrite.
 set -Eeuo pipefail
 
+# Ignore user site-packages and never install into ~/.local: a stale user-level
+# torch otherwise shadows the environment's CUDA build and breaks imports.
+export PYTHONNOUSERSITE=1
+export PIP_USER=0
+
 PROJECT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 ENV_PATH="$PROJECT/.venv-mmseg"
 CPU=0
