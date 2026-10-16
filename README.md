@@ -541,6 +541,25 @@ python scripts/train_gpu_queue.py --gpu-ids 0,1 --print-only
 
 队列默认先顺序完成全部八个 smoke 检查，任何一个未通过都不启动正式训练；随后最多同时训练两个模型。`--check-level config` 或 `build` 可显式降低启动前检查级别。每个检查默认最多 900 秒，超时标记失败；独立检查用 `--timeout`、队列用 `--check-timeout` 修改。单步检查不能保证所有尺寸、随机裁剪和整个 30000 iter 都不出现问题，显存不足时需要显式调整 batch 或启用 AMP，不会自动改动配置。
 
+队列本身在终端打印每个任务的起止与整体进度，例如：
+
+```
+Starting convnext_tiny on GPU 0 (1/8 started). Log: work_dirs/gpu_queue/<hash>/convnext_tiny.console.log
+Finished convnext_tiny on GPU 0: exit 0 (1/8 done)
+...
+Queue finished: 8/8 succeeded.
+```
+
+每个模型训练的实时输出（loss、评估、进度条）默认写入 `work_dirs/gpu_queue/<hash>/<模型>.console.log`，TensorBoard 曲线写入 `work_dirs/gpu_queue/<hash>/<模型>/vis_data`。想同时在终端实时滚动这些日志，加 `--follow`：
+
+```bash
+python scripts/train_gpu_queue.py --gpu-ids 0,1 --follow
+# 或事后跟随文件：
+RUN=$(ls -t work_dirs/gpu_queue | head -1); tail -f work_dirs/gpu_queue/$RUN/*.console.log
+```
+
+`--follow` 下每行日志带 `[模型名]` 前缀，多个模型并行时不会混淆。
+
 输出默认在 `work_dirs/gpu_queue/<批次ID>/`：每个模型有独立的 checkpoint、日志、TensorBoard 和运行状态；`<模型名>.console.log` 保存完整控制台输出；`preflight/summary.json` 汇总检查结果；`summary.json` 记录 GPU 分配、PID、退出码和任务状态。也可通过 `--work-root` 指定一个尚不存在的目录。正式训练中某个任务失败会标记失败并继续其他任务，整个批次最终返回非零退出码；添加 `--fail-fast` 后不再派发新任务，已运行的任务正常结束。Ctrl+C 停止此队列启动的训练进程。
 
 ## 配置兼容范围

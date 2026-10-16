@@ -75,6 +75,33 @@ class QueueTests(unittest.TestCase):
             self.assertLess(rows[2]['started_at'], rows[0]['finished_at'])
             self.assertEqual((root / 'next.console.log').read_text().strip(), '1')
 
+    def test_follow_streams_child_logs_and_reports_progress(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as folder:
+            root = Path(folder)
+            jobs = [dict(name='chatty', config='fake',
+                         command=[sys.executable, '-c', 'print("hello-live")'])]
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                status = execute_queue(jobs, ['0'], root, follow=True)
+            self.assertEqual(status, 0)
+            printed = buffer.getvalue()
+            self.assertIn('[chatty] hello-live', printed)
+            self.assertIn('(1/1 started)', printed)
+            self.assertIn('(1/1 done)', printed)
+            self.assertEqual((root / 'chatty.console.log').read_text().strip(), 'hello-live')
+
+    def test_without_follow_child_output_stays_off_the_terminal(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as folder:
+            root = Path(folder)
+            jobs = [dict(name='chatty', config='fake',
+                         command=[sys.executable, '-c', 'print("hello-live")'])]
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                status = execute_queue(jobs, ['0'], root)
+            self.assertEqual(status, 0)
+            self.assertNotIn('hello-live', buffer.getvalue())
+            self.assertEqual((root / 'chatty.console.log').read_text().strip(), 'hello-live')
+
     def test_failure_is_reported_and_next_job_runs_unless_fail_fast(self):
         for fail_fast in (False, True):
             with self.subTest(fail_fast=fail_fast), tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as folder:

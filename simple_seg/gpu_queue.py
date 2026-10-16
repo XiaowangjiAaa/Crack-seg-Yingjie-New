@@ -4,6 +4,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -31,11 +32,31 @@ def stop_process(process):
         process.wait()
 
 
-def execute_queue(jobs, devices, work_root, fail_fast=False):
+def pump_output(stream, log, prefix, follow, lock):
+    """Persist child output to its log file, optionally echoing it to the terminal."""
+    try:
+        for line in iter(stream.readline, b''):
+            log.write(line)
+            log.flush()
+            if follow:
+                with lock:
+                    sys.stdout.write('{} {}\n'.format(prefix, line.decode('utf-8', 'replace').rstrip('\r\n')))
+                    sys.stdout.flush()
+    finally:
+        try:
+            stream.close()
+        except OSError:
+            pass
+
+
+def execute_queue(jobs, devices, work_root, fail_fast=False, follow=False):
     """Each active process owns exactly one GPU until it exits."""
     work_root = Path(work_root)
+    total = len(jobs)
     rows = [dict(name=j['name'], config=j['config'], command=j['command'], status='pending') for j in jobs]
     active, pending, failed = {}, list(range(len(jobs))), False
+    started = completed = 0
+    lock = threading.Lock()
     def save(status):
         write_json(work_root / 'summary.json', dict(status=status, devices=devices, jobs=rows))
     save('running')
@@ -48,11 +69,14 @@ def execute_queue(jobs, devices, work_root, fail_fast=False):
                 job, row = jobs[index], rows[index]
                 log = work_root / (job['name'] + '.console.log')
                 stream = log.open('wb')
+                started += 1
                 row.update(gpu=device, console_log=str(log), started_at=time.time())
-                print('Starting {} on GPU {}. Log: {}'.format(job['name'], device, log), flush=True)
+                print('Starting {} on GPU {} ({}/{} started). Log: {}'.format(
+                    job['name'], device, started, total, log), flush=True)
                 try:
                     env = isolated_env(device)
-                    options = dict(cwd=str(PROJECT_ROOT), env=env, stdout=stream, stderr=subprocess.STDOUT)
+                    options = dict(cwd=str(PROJECT_ROOT), env=env,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     if os.name == 'nt':
                         options['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
                     else:
@@ -63,18 +87,24 @@ def execute_queue(jobs, devices, work_root, fail_fast=False):
                     failed = True
                     row.update(status='failed', exit_code=127, error=str(error), finished_at=time.time())
                 else:
+                    pump = threading.Thread(target=pump_output, daemon=True,
+                                            args=(process.stdout, stream, '[{}]'.format(job['name']), follow, lock))
+                    pump.start()
                     row.update(status='running', pid=process.pid)
-                    active[device] = (index, process, stream)
+                    active[device] = (index, process, stream, pump)
                 save('running')
-            for device, (index, process, stream) in list(active.items()):
+            for device, (index, process, stream, pump) in list(active.items()):
                 code = process.poll()
                 if code is None:
                     continue
+                pump.join()
                 stream.close()
+                completed += 1
                 rows[index].update(status='success' if code == 0 else 'failed', exit_code=code,
                                    finished_at=time.time())
                 failed = failed or code != 0
-                print('Finished {} on GPU {}: exit {}'.format(rows[index]['name'], device, code), flush=True)
+                print('Finished {} on GPU {}: exit {} ({}/{} done)'.format(
+                    rows[index]['name'], device, code, completed, total), flush=True)
                 del active[device]
                 save('running')
             if fail_fast and failed and not active:
@@ -84,8 +114,9 @@ def execute_queue(jobs, devices, work_root, fail_fast=False):
             if pending or active:
                 time.sleep(0.2)
     except BaseException as error:
-        for index, process, stream in active.values():
+        for index, process, stream, pump in active.values():
             stop_process(process)
+            pump.join()
             stream.close()
             rows[index].update(status='interrupted', exit_code=process.returncode, finished_at=time.time())
         for index in pending:
@@ -95,6 +126,8 @@ def execute_queue(jobs, devices, work_root, fail_fast=False):
             return 130
         raise
     save('failed' if failed else 'completed')
+    print('Queue finished: {}/{} succeeded.'.format(
+        sum(1 for row in rows if row['status'] == 'success'), total), flush=True)
     return 1 if failed else 0
 
 
@@ -107,6 +140,7 @@ def main(argv=None):
     parser.add_argument('--check-level', choices=['config', 'build', 'smoke'], default='smoke')
     parser.add_argument('--check-timeout', type=float, default=900, help='Maximum seconds per preflight model')
     parser.add_argument('--fail-fast', action='store_true', help='Stop scheduling new jobs after a failed job')
+    parser.add_argument('--follow', action='store_true', help='Stream each model console log to this terminal')
     parser.add_argument('--print-only', action='store_true')
     parser.add_argument('--amp', action='store_true', help='Enable AMP in both preflight and training')
     parser.add_argument('--max-iters', type=int)
@@ -140,7 +174,7 @@ def main(argv=None):
             write_json(work_root / 'summary.json', dict(status='preflight_failed',
                        report=str(work_root / 'preflight/summary.json'), jobs=[]))
             return code
-        return execute_queue(jobs, devices, work_root, args.fail_fast)
+        return execute_queue(jobs, devices, work_root, args.fail_fast, args.follow)
     except (ValueError, OSError) as error:
         parser.exit(1, '{}\n'.format(error))
     except KeyboardInterrupt:
