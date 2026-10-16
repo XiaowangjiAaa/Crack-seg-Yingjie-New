@@ -6,16 +6,28 @@
 
 ## 快速开始
 
-Windows 安装好 Miniconda/Anaconda 后，在项目根目录的 **Conda PowerShell** 执行以下命令。脚本自动创建项目独立 Python 3.10 环境，安装全部 13 个实验和 TensorBoard，检查编译算子和模型注册、获取官方配置，并准备 7:2:1 数据划分。Windows 使用单卡；Linux/WSL2 可使用默认 NCCL 双卡训练。
+先安装与操作系统对应的 Miniconda/Anaconda，再在项目根目录运行对应入口。脚本自动创建项目独立 Python 3.10 环境，安装全部 15 个实验和 TensorBoard，检查编译算子和模型注册、获取官方配置，并准备 7:2:1 数据划分。
+
+**Linux / WSL2（Bash）：**
+
+```bash
+bash scripts/setup.sh
+conda activate ./.venv-mmseg
+```
+
+**Windows（Conda PowerShell）：**
 
 ```powershell
 # 一条命令完成环境和数据配置；不会自动开始训练
 powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 conda activate ./.venv-mmseg
+```
 
-# 检查实验配置并开始单卡训练
-python scripts/train.py configs/experiments/segformer_b0.json --dry-run
-python scripts/train.py configs/experiments/segformer_b0.json --gpus 1
+安装后，两种系统都可以检查并启动双卡独立模型队列：
+
+```bash
+python scripts/check_experiments.py --level config
+python scripts/train_gpu_queue.py --gpu-ids 0,1
 ```
 
 另开终端，激活同一环境后启动可视化：
@@ -30,7 +42,30 @@ python scripts/webui.py --logdir work_dirs --port 6006
 
 ## 1. 安装一次
 
-推荐 Windows + Conda + Python 3.10。项目提供独立环境脚本，不修改已有环境。在项目根目录的 Conda PowerShell 中运行：
+推荐 Conda + Python 3.10。Linux/WSL2 使用 `setup.sh`，Windows 使用 `setup.ps1`；`powershell -ExecutionPolicy ...` 不适用于 Linux。两者均使用独立环境，已有目标环境时检查 Python 版本后继续安装，不修改其他环境。
+
+Linux/WSL2：
+
+```bash
+bash scripts/setup.sh
+# 无需提前 conda activate；脚本通过 conda run 在目标环境中执行所有安装步骤
+conda activate ./.venv-mmseg
+python -m simple_seg --help
+```
+
+WSL2 需要在 Linux 发行版内安装 Linux 版 Conda，环境不能与 Windows 共用；已有 Windows `.venv-mmseg` 时，为 Linux 指定另一个环境目录。
+
+```bash
+# 尚未放入数据，只配置环境
+bash scripts/setup.sh --skip-data
+# 仅预览，不下载、不创建文件
+bash scripts/setup.sh --print-only
+# 指定 Linux 环境目录，路径支持空格
+bash scripts/setup.sh --env-path "$HOME/conda-envs/simple-mmseg"
+conda activate "$HOME/conda-envs/simple-mmseg"
+```
+
+Windows Conda PowerShell：
 
 ```powershell
 .\scripts\setup.ps1
@@ -39,7 +74,7 @@ python scripts/webui.py --logdir work_dirs --port 6006
 
 固定组合：PyTorch 2.1.0、torchvision 0.16.0、CUDA 11.8 版 PyTorch、MMCV 2.1.0、MMSegmentation 1.2.2、NumPy 1.26.4。CUDA 版需要支持该运行时的 NVIDIA 驱动；无需单独编译 CUDA 工具链。脚本要求 MMCV 有可用 wheel，找不到会停止并显示错误。
 
-脚本使用项目目录的 `.venv-mmseg`，已有该 Conda 环境时会检查 Python 3.10 后继续安装；其他环境不受影响。安装日志保存在 `work_dirs/setup/`。已有完整 7:2:1 划分时复用，不重新随机划分；已有其他比例或不完整划分时会报错，避免无意覆盖。获取官方配置后还会核对 13 个实验的数据流程。依赖版本依据 [MMSegmentation 兼容检查](https://github.com/open-mmlab/mmsegmentation/blob/v1.2.2/mmseg/__init__.py) 和 [MMDetection 兼容检查](https://github.com/open-mmlab/mmdetection/blob/v3.3.0/mmdet/__init__.py)，环境通过 Conda 的 [create --prefix](https://docs.conda.io/projects/conda/en/stable/commands/create.html) 创建。
+脚本默认使用项目目录的 `.venv-mmseg`。安装日志保存在 `work_dirs/setup/`；命令失败立即停止，可修复后重新运行。已有完整 7:2:1 划分时复用，不重新随机划分；已有其他比例或不完整划分时会报错，避免无意覆盖。获取官方配置后还会核对 15 个实验的数据流程。依赖版本依据 [MMSegmentation 兼容检查](https://github.com/open-mmlab/mmsegmentation/blob/v1.2.2/mmseg/__init__.py) 和 [MMDetection 兼容检查](https://github.com/open-mmlab/mmdetection/blob/v3.3.0/mmdet/__init__.py)，环境通过 Conda 的 [create --prefix](https://docs.conda.io/projects/conda/en/stable/commands/create.html) 创建，安装通过 [conda run --prefix](https://docs.conda.io/projects/conda/en/stable/commands/run.html) 执行。
 
 ```powershell
 # 尚未放入 dataset/Image 和 dataset/Mask，只配置环境
@@ -54,13 +89,13 @@ python scripts/webui.py --logdir work_dirs --port 6006
 
 | 文件 | 包含内容 | 适用范围 |
 | --- | --- | --- |
-| [`requirements.txt`](requirements.txt) | CUDA 11.8 PyTorch、MMCV/MMEngine/MMSeg、MMPRETRAIN、MMDetection 和 TensorBoard | 全部 13 个实验、评估、预测和 WebUI |
+| [`requirements.txt`](requirements.txt) | CUDA 11.8 PyTorch、MMCV/MMEngine/MMSeg、MMPRETRAIN、MMDetection 和 TensorBoard | 全部 15 个实验、评估、预测和 WebUI |
 | [`requirements-common.txt`](requirements-common.txt) | 共用模型及工具依赖，不选择 PyTorch CUDA/CPU 版本 | 安装脚本内部复用，不作为新环境的独立安装入口 |
 | [`requirements-models.txt`](requirements-models.txt) | 转发到 requirements.txt | 保持旧安装命令兼容 |
 
-`requirements.txt` 面向 CUDA 11.8 版 PyTorch；CPU 环境使用下方 `setup.ps1 -Cpu` 路径，不直接套用 CUDA requirements。默认一键安装已包括 ConvNeXt/Mask2Former 所需的额外模型包。
+`requirements.txt` 面向 CUDA 11.8 版 PyTorch。Linux/WSL2 的一键入口是 `bash scripts/setup.sh`，Windows 的入口是 `powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1`。默认一键安装已包括 ConvNeXt/Mask2Former 所需的额外模型包。
 
-可选 CPU 环境：`./scripts/setup.ps1 -Cpu`，同样需要官方提供对应 MMCV wheel；找不到时停止，不自动源码编译。安装模型依赖不保证所有模型或算子支持 CPU 训练。
+可选 CPU 环境：Linux/WSL2 用 `bash scripts/setup.sh --cpu`，Windows 用 `./scripts/setup.ps1 -Cpu`。不要将 CUDA requirements 直接用于 CPU 安装。两者同样需要官方提供对应 MMCV wheel；找不到时停止，不自动源码编译。安装模型依赖不保证所有模型或算子支持 CPU 训练。
 
 手动安装（已激活 Python 3.10 环境）：
 
@@ -80,7 +115,7 @@ python -m pip install mmcv==2.1.0 --only-binary mmcv -f https://download.openmml
 python -m pip install -e '.[models]'
 ```
 
-后续示例中的 `python` 指这个独立环境中的 Python。可以先 `conda activate ./.venv-mmseg`，或用 `& .\.venv-mmseg\python.exe` 替换。
+后续示例中的 `python` 指这个独立环境中的 Python。可以先 `conda activate ./.venv-mmseg`；不激活时，Linux 用 `./.venv-mmseg/bin/python`，Windows PowerShell 用 `& .\.venv-mmseg\python.exe` 替换。单模型多 GPU 的 NCCL DDP 需要 Linux/WSL2；一张卡一个模型的任务队列在 Windows 和 Linux 均可使用。
 
 ## 2. 数据就是两个目录
 

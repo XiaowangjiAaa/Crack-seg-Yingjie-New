@@ -1,6 +1,7 @@
 # Full CUDA installation: all 15 experiments and TensorBoard WebUI.
 # One-command environment setup from Conda PowerShell:
 # powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+# Linux/WSL2: bash scripts/setup.sh
 # Or, inside an existing Python 3.10 environment:
 # python -m pip install -r requirements.txt
 # python -m pip install -e .
